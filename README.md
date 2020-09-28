@@ -1,5 +1,5 @@
 # rpi-beep-boot
-Ansible script to make bootable SDCard for RPI4 with Ubuntu image
+Ansible script to make bootable SDCard for RPI4 with [Ubuntu ARM](https://ubuntu.com/download/raspberry-pi) image
 
 ## Requirements:
 - [ansible](https://www.ansible.com/)
