@@ -1,7 +1,7 @@
-Role Name
+RPI INIT
 =========
 
-A brief description of the role goes here.
+Tasks for making multiple devices bootable with Ubuntu image at once for RPi4
 
 Requirements
 ------------
