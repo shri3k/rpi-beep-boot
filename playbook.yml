@@ -1,0 +1,21 @@
+-
+  name: Prepare SD Card for RPi with Ubuntu image
+  hosts: localhost
+  become: yes
+  become_user: root
+  become_method: su
+  vars_files:
+    - vars.yml
+  vars:
+    disable_wifi: true
+    disable_bt: true
+
+  connection: local
+  gather_facts: no
+  become: yes
+  become_method: sudo
+  become_user: root
+
+  roles:
+    - rpi_init
+

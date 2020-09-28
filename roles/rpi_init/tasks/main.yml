@@ -1,0 +1,78 @@
+---
+# tasks file for rpi_init
+- name: Download image from ubuntu
+  get_url:
+    url: '{{ download_url }}'
+    dest: "{{ img_file }}"
+  register: _rpi_download
+  async: 100000
+  poll: 0
+  tags:
+    - download
+
+- name: Unmount all partitions
+  shell: "umount {{ item }}?*"
+  with_items: "{{ devices }}"
+  ignore_errors: yes
+
+- name: Remove all partitions
+  shell: "wipefs -a {{item}}"
+  with_items: "{{ devices }}"
+
+- debug:
+    var: _partitions
+
+- name: Make disk with GPT
+  shell: "parted -s {{ item }} mklabel gpt"
+  with_items: "{{ devices }}"
+
+- name: Make root primary fat32 partition
+  shell: "parted -s {{ item }} mkpart boot fat32 1MiB 216MiB"
+  with_items: "{{ devices }}"
+
+
+- name: Make disk UEFI compatible
+  shell: "parted -s {{item}} set 1 esp on"
+  with_items: "{{ devices }}"
+
+
+- name: Create ext4 partition on the rest of the disk
+  shell: "parted -s {{ item }} mkpart data ext4 216MiB 100%"
+  with_items: "{{ devices }}"
+
+
+- name: Create ext4 filesystem
+  filesystem:
+    dev: "{{item}}2"
+    fstype: ext4
+  with_items: "{{ devices }}"
+
+- name: Check download before buring the image
+  async_status:
+    jid: "{{ _rpi_download.ansible_job_id }}"
+  register: _jobs_downloads
+  until: _jobs_downloads.finished
+  tags:
+    - download
+
+- name: Burn the image to disk
+  shell: "xzcat {{ img_file }} | dd bs=4M of={{item}} status=progress"
+  with_items: "{{ devices }}"
+
+- name: Enable ssh on bootable images
+  shell: "mount {{item}}1 -o x-mount.mkdir /mnt/tmp && touch /mnt/tmp/ssh && umount /mnt/tmp"
+  with_items: "{{ devices }}"
+
+- name: Disable wifi
+  shell: "mount {{item}}1 -o x-mount.mkdir /mnt/tmp && echo 'dtoverlay=disable-wifi' >> /mnt/tmp/usercfg.txt && umount /mnt/tmp"
+  when: disable_wifi
+  with_items: "{{ devices }}"
+  tags:
+    - disable
+
+- name: Disable bluetooth
+  shell: "mount {{item}}1 -o x-mount.mkdir /mnt/tmp && echo 'dtoverlay=disable-bt' >> /mnt/tmp/usercfg.txt && umount /mnt/tmp"
+  when: disable_bt
+  with_items: "{{ devices }}"
+  tags:
+    - disable
