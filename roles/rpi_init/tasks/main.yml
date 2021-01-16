@@ -63,6 +63,13 @@
   shell: "mount {{item}}1 -o x-mount.mkdir /mnt/tmp && touch /mnt/tmp/ssh && umount /mnt/tmp"
   with_items: "{{ devices }}"
 
+- name: Enable cgroups for K8s
+  shell: "mount {{item}}1 -o x-mount.mkdir /mnt/tmp && echo 'cgroup_enable=cpuset cgroup_enable=memory cgroup_memory=1' >> /mnt/tmp/cmdline.txt && umount /mnt/tmp"
+  when: disable_wifi
+  with_items: "{{ devices }}"
+  tags:
+    - disable
+
 - name: Disable wifi
   shell: "mount {{item}}1 -o x-mount.mkdir /mnt/tmp && echo 'dtoverlay=disable-wifi' >> /mnt/tmp/usercfg.txt && umount /mnt/tmp"
   when: disable_wifi
